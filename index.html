@@ -1,0 +1,140 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Falling Blocks</title>
+  <style>
+    body { font-family: Arial; text-align: center; margin: 0; }
+    #game {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      height: 600px;
+      margin: 16px auto;
+      border: 2px solid #333;
+      overflow: hidden;
+      background: #f7f7f7;
+      border-radius: 12px;
+    }
+    .block {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #hud { display: flex; justify-content: space-between; max-width: 420px; margin: 0 auto; padding: 8px 4px; }
+    button { padding: 10px 14px; border-radius: 10px; border: 1px solid #333; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>Click the Falling Blocks</h2>
+
+  <div id="hud">
+    <div>Score: <b id="score">0</b></div>
+    <div>Lives: <b id="lives">3</b></div>
+    <button id="startBtn">Start</button>
+  </div>
+
+  <div id="game"></div>
+
+  <script>
+    const game = document.getElementById("game");
+    const scoreEl = document.getElementById("score");
+    const livesEl = document.getElementById("lives");
+    const startBtn = document.getElementById("startBtn");
+
+    let score = 0, lives = 3;
+    let running = false;
+    let blocks = [];
+    let spawnTimer = null;
+    let loopId = null;
+
+    function rand(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function randomColor() {
+      const colors = ["#ff6b6b", "#4dabf7", "#51cf66", "#ffd43b", "#845ef7"];
+      return colors[rand(0, colors.length - 1)];
+    }
+
+    function spawnBlock() {
+      const block = document.createElement("div");
+      block.className = "block";
+      block.style.background = randomColor();
+
+      const x = rand(0, game.clientWidth - 50);
+      block.style.left = x + "px";
+      block.style.top = "-50px";
+
+      const speed = rand(2, 5); // falling speed
+      const obj = { el: block, y: -50, speed };
+
+      block.addEventListener("click", () => {
+        if (!running) return;
+        score += 1;
+        scoreEl.textContent = score;
+        removeBlock(obj);
+      });
+
+      game.appendChild(block);
+      blocks.push(obj);
+    }
+
+    function removeBlock(obj) {
+      obj.el.remove();
+      blocks = blocks.filter(b => b !== obj);
+    }
+
+    function gameLoop() {
+      if (!running) return;
+
+      blocks.forEach(obj => {
+        obj.y += obj.speed;
+        obj.el.style.top = obj.y + "px";
+
+        // If it hits bottom
+        if (obj.y > game.clientHeight) {
+          removeBlock(obj);
+          lives -= 1;
+          livesEl.textContent = lives;
+
+          if (lives <= 0) endGame();
+        }
+      });
+
+      loopId = requestAnimationFrame(gameLoop);
+    }
+
+    function startGame() {
+      // reset
+      score = 0; lives = 3;
+      scoreEl.textContent = score;
+      livesEl.textContent = lives;
+
+      // clear old blocks
+      blocks.forEach(b => b.el.remove());
+      blocks = [];
+
+      running = true;
+      startBtn.textContent = "Restart";
+
+      // spawn every 800ms
+      clearInterval(spawnTimer);
+      spawnTimer = setInterval(spawnBlock, 800);
+
+      cancelAnimationFrame(loopId);
+      loopId = requestAnimationFrame(gameLoop);
+    }
+
+    function endGame() {
+      running = false;
+      clearInterval(spawnTimer);
+      alert("Game Over! Your score: " + score);
+    }
+
+    startBtn.addEventListener("click", startGame);
+  </script>
+</body>
+</html>
